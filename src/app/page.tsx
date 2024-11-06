@@ -208,7 +208,7 @@ const PeopleMovement = () => {
           <img 
             src="https://www.elisava.net/wp-content/themes/elisava/images/logo.svg"
             alt="Elisava Logo"
-            className="h-10 object-contain"
+            className="h-6.5 object-contain"
           />
         </div>
         
