@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { ArrowRight, ArrowLeft } from 'lucide-react';
 
 const PeopleMovement = () => {
   const generateGroups = () => {
@@ -13,13 +13,12 @@ const PeopleMovement = () => {
       const direction = Math.random() > 0.5 ? 1 : -1;
       const startProgress = Math.random() * 100;
       const baseLane = Math.random() > 0.5 ? 0.5 : -0.5;
-      const waviness = Math.random() > 0.7 ? 0.15 + Math.random() * 0.1 : 0;
+      const waviness = Math.random() > 0.7 ? 0.15 + Math.random() * 0.1 : 0; // Some couples meander
       
       groups.push([
         {
           id: id++,
           type: 'couple',
-          gender: 'M',
           baseSpeed,
           direction,
           startProgress,
@@ -30,7 +29,6 @@ const PeopleMovement = () => {
         {
           id: id++,
           type: 'couple',
-          gender: 'F',
           baseSpeed,
           direction,
           startProgress,
@@ -43,7 +41,7 @@ const PeopleMovement = () => {
     
     // Generate singles (25%)
     for (let i = 0; i < 15; i++) {
-      const waviness = Math.random() > 0.6 ? 0.2 + Math.random() * 0.15 : 0;
+      const waviness = Math.random() > 0.6 ? 0.2 + Math.random() * 0.15 : 0; // Singles meander more
       groups.push([{
         id: id++,
         type: 'single',
@@ -57,21 +55,21 @@ const PeopleMovement = () => {
       }]);
     }
     
-    // Generate families (20%)
+    // Generate families (20%) - Increased from 3 to 8
     for (let i = 0; i < 8; i++) {
       const baseSpeed = 0.035 + Math.random() * 0.01;
       const direction = Math.random() > 0.5 ? 1 : -1;
       const startProgress = Math.random() * 100;
       const baseLane = (Math.random() > 0.5 ? 1 : -1) * 0.5;
-      const waviness = Math.random() > 0.8 ? 0.1 + Math.random() * 0.05 : 0;
+      const waviness = Math.random() > 0.8 ? 0.1 + Math.random() * 0.05 : 0; // Families meander less
       const waveOffset = Math.random() * Math.PI * 2;
       
       const familyGroup = [
+        // Parents
         {
           id: id++,
           type: 'family',
           role: 'parent',
-          gender: 'M',
           baseSpeed,
           direction,
           startProgress,
@@ -83,7 +81,6 @@ const PeopleMovement = () => {
           id: id++,
           type: 'family',
           role: 'parent',
-          gender: 'F',
           baseSpeed,
           direction,
           startProgress,
@@ -93,6 +90,7 @@ const PeopleMovement = () => {
         }
       ];
       
+      // Add 1-2 children
       const childCount = Math.random() > 0.5 ? 2 : 1;
       for (let c = 0; c < childCount; c++) {
         familyGroup.push({
@@ -127,7 +125,6 @@ const PeopleMovement = () => {
   
   const [hoveredPerson, setHoveredPerson] = useState(null);
   const [stats, setStats] = useState({});
-  const [demographics, setDemographics] = useState({});
 
   useEffect(() => {
     const newStats = {
@@ -135,69 +132,36 @@ const PeopleMovement = () => {
       couples: people.filter(p => p.type === 'couple').length / 2,
       families: people.filter(p => p.type === 'family' && p.role === 'parent').length / 2
     };
-    
-    const newDemographics = {
-      singles: {
-        total: people.filter(p => p.type === 'single').length,
-        male: people.filter(p => p.type === 'single' && p.gender === 'M').length,
-        female: people.filter(p => p.type === 'single' && p.gender === 'F').length
-      },
-      couples: {
-        total: people.filter(p => p.type === 'couple').length / 2,
-        pairs: people.filter(p => p.type === 'couple').length / 2
-      },
-      families: {
-        total: people.filter(p => p.type === 'family' && p.role === 'parent').length / 2,
-        parents: {
-          total: people.filter(p => p.type === 'family' && p.role === 'parent').length,
-          male: people.filter(p => p.type === 'family' && p.role === 'parent' && p.gender === 'M').length,
-          female: people.filter(p => p.type === 'family' && p.role === 'parent' && p.gender === 'F').length
-        },
-        children: {
-          total: people.filter(p => p.type === 'family' && p.role === 'child').length,
-          boys: people.filter(p => p.type === 'family' && p.role === 'child' && p.gender === 'M').length,
-          girls: people.filter(p => p.type === 'family' && p.role === 'child' && p.gender === 'F').length
-        }
-      }
-    };
-
     setStats(newStats);
-    setDemographics(newDemographics);
   }, [people]);
 
-  // To be continued in Part 2...
-
-  return null;
-};
-
-export default PeopleMovement;
-import React, { useState, useEffect } from 'react';
-import { Card } from '@/components/ui/card';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-
-const PeopleMovement = () => {
-  // Movement update logic
   useEffect(() => {
     const interval = setInterval(() => {
       setPeople(currentPeople =>
         currentPeople.map(person => {
           let newProgress = person.progress + (person.baseSpeed * person.direction);
-          let newLane = person.baseLane;
           
+          // Calculate wavy movement
+          let newLane = person.baseLane;
           if (person.waviness) {
             newLane += Math.sin((newProgress / 10) + person.waveOffset) * person.waviness;
           }
           
+          // Handle metro area (75-85% of path)
           if (newProgress > 70 && newProgress < 85) {
+            // Split into two streams, but maintain some waviness
             const baseStream = person.baseLane > 0 ? 0.8 : -0.8;
             newLane = baseStream + (person.waviness ? Math.sin((newProgress / 10) + person.waveOffset) * (person.waviness * 0.5) : 0);
           }
           
+          // After metro (85-95%)
           if (newProgress > 85 && newProgress < 95) {
+            // Gradual return to normal lanes
             const returnFactor = (95 - newProgress) / 10;
             newLane = (person.baseLane * returnFactor + newLane * (1 - returnFactor));
           }
           
+          // Reset position if reached end
           if (newProgress > 100) newProgress = 0;
           if (newProgress < 0) newProgress = 100;
           
@@ -217,6 +181,7 @@ const PeopleMovement = () => {
     return () => clearInterval(interval);
   }, []);
 
+  // Rest of the component remains the same...
   const getPosition = (progress, lane) => {
     const x = 50 + (progress / 100) * 500;
     const y = 150 + (lane * 30);
@@ -248,87 +213,16 @@ const PeopleMovement = () => {
         />
       </div>
       
-      <Tabs defaultValue="overview" className="mb-4">
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="singles">Singles ({stats.singles})</TabsTrigger>
-          <TabsTrigger value="couples">Couples ({stats.couples})</TabsTrigger>
-          <TabsTrigger value="families">Families ({stats.families})</TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="overview" className="grid grid-cols-3 gap-2">
-          {Object.entries(stats).map(([key, value]) => (
-            <div key={key} className="bg-gray-50 p-2 rounded text-center">
-              <div className="text-xs text-gray-600 capitalize">{key}</div>
-              <div className="text-sm font-bold">{value}</div>
-            </div>
-          ))}
-        </TabsContent>
-        
-        <TabsContent value="singles" className="grid grid-cols-3 gap-2">
-          <div className="bg-gray-50 p-2 rounded text-center">
-            <div className="text-xs text-gray-600">Total</div>
-            <div className="text-sm font-bold">{demographics.singles?.total}</div>
+      <div className="mb-4 grid grid-cols-3 gap-2">
+        {Object.entries(stats).map(([key, value]) => (
+          <div key={key} className="bg-gray-50 p-2 rounded text-center">
+            <div className="text-xs text-gray-600 capitalize">{key}</div>
+            <div className="text-sm font-bold">{value}</div>
           </div>
-          <div className="bg-gray-50 p-2 rounded text-center">
-            <div className="text-xs text-gray-600">Men</div>
-            <div className="text-sm font-bold">{demographics.singles?.male}</div>
-          </div>
-          <div className="bg-gray-50 p-2 rounded text-center">
-            <div className="text-xs text-gray-600">Women</div>
-            <div className="text-sm font-bold">{demographics.singles?.female}</div>
-          </div>
-        </TabsContent>
-        
-        <TabsContent value="couples" className="grid grid-cols-2 gap-2">
-          <div className="bg-gray-50 p-2 rounded text-center">
-            <div className="text-xs text-gray-600">Total Couples</div>
-            <div className="text-sm font-bold">{demographics.couples?.total}</div>
-          </div>
-          <div className="bg-gray-50 p-2 rounded text-center">
-            <div className="text-xs text-gray-600">Male/Female Pairs</div>
-            <div className="text-sm font-bold">{demographics.couples?.pairs}</div>
-          </div>
-        </TabsContent>
-        
-        <TabsContent value="families" className="grid grid-cols-3 gap-2">
-          <div className="bg-gray-50 p-2 rounded text-center">
-            <div className="text-xs text-gray-600">Total Families</div>
-            <div className="text-sm font-bold">{demographics.families?.total}</div>
-          </div>
-          <div className="bg-gray-50 p-2 rounded text-center col-span-2">
-            <div className="text-xs text-gray-600">Parents</div>
-            <div className="text-sm">
-              {demographics.families?.parents.male} fathers, {demographics.families?.parents.female} mothers
-            </div>
-          </div>
-          <div className="bg-gray-50 p-2 rounded text-center col-span-3">
-            <div className="text-xs text-gray-600">Children</div>
-            <div className="text-sm">
-              {demographics.families?.children.total} total 
-              ({demographics.families?.children.boys} boys, {demographics.families?.children.girls} girls)
-            </div>
-          </div>
-        </TabsContent>
-      </Tabs>
+        ))}
+      </div>
 
-      {/* Continued in Part 3... */}
-    </Card>
-  );
-};
-
-export default PeopleMovement;
-import React, { useState, useEffect } from 'react';
-import { Card } from '@/components/ui/card';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-
-const PeopleMovement = () => {
-  // ... Previous state and effects code goes here ...
-
-  return (
-    <Card className="p-6 w-full max-w-4xl">
-      {/* Previous header and tabs code goes here */}
-      
+      {/* Rest of the SVG and UI components remain the same */}
       <svg className="w-full h-96 bg-slate-50" viewBox="0 0 600 300">
         <rect x="50" y="80" width="500" height="20" fill="#666"/>
         <rect x="50" y="200" width="500" height="20" fill="#666"/>
@@ -348,29 +242,6 @@ const PeopleMovement = () => {
           strokeDasharray="5,5"
         />
 
-        <g transform="translate(250, 65)">
-          <rect x="-25" y="-15" width="50" height="30" fill="#8B4513" rx="2"/>
-          <text x="0" y="5" textAnchor="middle" fill="white" className="text-xs">Liceu</text>
-        </g>
-
-        <g transform="translate(150, 150)">
-          <circle cx="0" cy="0" r="8" fill="#4682B4" opacity="0.8"/>
-          <circle cx="0" cy="0" r="4" fill="#87CEEB"/>
-          <path
-            d="M -8,-8 L 8,8 M -8,8 L 8,-8"
-            stroke="#87CEEB"
-            strokeWidth="1"
-            opacity="0.6"
-          />
-        </g>
-
-        {[200, 300, 400].map((x) => (
-          <g key={`kiosk-${x}`} transform={`translate(${x}, 150)`}>
-            <rect x="-6" y="-6" width="12" height="12" fill="#4A5568" rx="1"/>
-            <rect x="-5" y="-7" width="10" height="3" fill="#2D3748" rx="1"/>
-          </g>
-        ))}
-
         <g transform="translate(480, 150)">
           <rect x="-15" y="-15" width="30" height="30" fill="#dc2626" rx="5"/>
           <text x="0" y="7" textAnchor="middle" fill="white" className="text-lg font-bold">M</text>
@@ -379,18 +250,8 @@ const PeopleMovement = () => {
 
         {Array.from({ length: 20 }).map((_, i) => (
           <React.Fragment key={`trees-${i}`}>
-            <circle 
-              cx={75 + i * 25} 
-              cy={70} 
-              r={3 + Math.random()} 
-              fill={`rgb(45, ${147 + Math.random() * 20}, 68)`}
-            />
-            <circle 
-              cx={75 + i * 25} 
-              cy={230} 
-              r={3 + Math.random()} 
-              fill={`rgb(45, ${147 + Math.random() * 20}, 68)`}
-            />
+            <circle cx={75 + i * 25} cy={70} r={4} fill="#2d9344"/>
+            <circle cx={75 + i * 25} cy={230} r={4} fill="#2d9344"/>
           </React.Fragment>
         ))}
 
