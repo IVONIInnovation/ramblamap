@@ -3,6 +3,110 @@
 import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 
+type PersonType = {
+  id: number;
+  type: 'single' | 'couple' | 'family';
+  gender?: 'M' | 'F';
+  role?: 'parent' | 'child';
+  baseSpeed: number;
+  direction: number;
+  startProgress: number;
+  baseLane: number;
+  waviness: number;
+  waveOffset: number;
+  progress: number;
+  lane: number;
+  pathHistory: Array<{ x: number; y: number }>;
+  futureSteps: any[];
+};
+
+type DetailedStats = {
+  singles: {
+    total: number;
+    male: number;
+    female: number;
+  };
+  couples: {
+    total: number;
+    count: number;
+  };
+  families: {
+    total: number;
+    count: number;
+    parents: number;
+    children: {
+      total: number;
+      boys: number;
+      girls: number;
+    };
+  };
+};
+
+const StatsPanel = ({ 
+  label, 
+  value, 
+  detailedStats, 
+  isOpen, 
+  onClick 
+}: { 
+  label: string;
+  value: number;
+  detailedStats: any;
+  isOpen: boolean;
+  onClick: () => void;
+}) => {
+  return (
+    <div className="relative">
+      <div 
+        className={`bg-gray-50 p-2 rounded text-center cursor-pointer transition-colors ${isOpen ? 'bg-gray-100' : 'hover:bg-gray-100'}`}
+        onClick={onClick}
+      >
+        <div className="text-xs text-gray-600 capitalize">{label}</div>
+        <div className="text-sm font-bold">{value}</div>
+      </div>
+      
+      {isOpen && (
+        <div className="absolute top-full left-0 right-0 mt-2 p-3 bg-white rounded-lg shadow-lg z-10 border border-gray-200">
+          {label === 'singles' && (
+            <div className="space-y-1">
+              <div className="text-xs text-gray-500">Total Singles: {detailedStats.total}</div>
+              <div className="flex justify-between text-xs">
+                <span className="text-blue-600">Males: {detailedStats.male}</span>
+                <span className="text-pink-400">Females: {detailedStats.female}</span>
+              </div>
+              <div className="text-xs text-gray-500">
+                Ratio: {((detailedStats.male / detailedStats.total) * 100).toFixed(1)}% M / {((detailedStats.female / detailedStats.total) * 100).toFixed(1)}% F
+              </div>
+            </div>
+          )}
+          
+          {label === 'couples' && (
+            <div className="space-y-1">
+              <div className="text-xs text-gray-500">Total Couples: {detailedStats.count}</div>
+              <div className="text-xs text-gray-500">Total People: {detailedStats.total}</div>
+            </div>
+          )}
+          
+          {label === 'families' && (
+            <div className="space-y-1">
+              <div className="text-xs text-gray-500">Total Families: {detailedStats.count}</div>
+              <div className="text-xs text-gray-500">Parents: {detailedStats.parents}</div>
+              <div className="text-xs text-gray-500 mt-1">Children: {detailedStats.children.total}</div>
+              <div className="flex justify-between text-xs">
+                <span className="text-green-500">Boys: {detailedStats.children.boys}</span>
+                <span className="text-yellow-500">Girls: {detailedStats.children.girls}</span>
+              </div>
+              <div className="text-xs text-gray-500">
+                Children Ratio: {((detailedStats.children.boys / detailedStats.children.total) * 100).toFixed(1)}% B / {((detailedStats.children.girls / detailedStats.children.total) * 100).toFixed(1)}% G
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
+
 const PeopleMovement = () => {
   const generateGroups = () => {
     const groups = [];
@@ -65,12 +169,14 @@ const PeopleMovement = () => {
       const waviness = Math.random() > 0.8 ? 0.1 + Math.random() * 0.05 : 0;
       const waveOffset = Math.random() * Math.PI * 2;
       
+      
       const familyGroup = [
-        // Parents
+        // Parents - one male, one female
         {
           id: id++,
           type: 'family',
           role: 'parent',
+          gender: 'M',
           baseSpeed,
           direction,
           startProgress,
@@ -82,6 +188,7 @@ const PeopleMovement = () => {
           id: id++,
           type: 'family',
           role: 'parent',
+          gender: 'F',
           baseSpeed,
           direction,
           startProgress,
@@ -131,14 +238,45 @@ const PeopleMovement = () => {
     families: 0
   });
 
+  
+const [detailedStats, setDetailedStats] = useState<DetailedStats>({
+  singles: { total: 0, male: 0, female: 0 },
+  couples: { total: 0, count: 0 },
+  families: { total: 0, count: 0, parents: 0, children: { total: 0, boys: 0, girls: 0 } }
+});
+const [openStatPanel, setOpenStatPanel] = useState<string | null>(null);
+
+
   useEffect(() => {
-    const newStats = {
-      singles: people.filter(p => p.type === 'single').length,
-      couples: people.filter(p => p.type === 'couple').length / 2,
-      families: people.filter(p => p.type === 'family' && p.role === 'parent').length / 2
-    };
-    setStats(newStats);
-  }, [people]);
+  const newDetailedStats = {
+    singles: {
+      total: people.filter(p => p.type === 'single').length,
+      male: people.filter(p => p.type === 'single' && p.gender === 'M').length,
+      female: people.filter(p => p.type === 'single' && p.gender === 'F').length
+    },
+    couples: {
+      total: people.filter(p => p.type === 'couple').length,
+      count: people.filter(p => p.type === 'couple').length / 2
+    },
+    families: {
+      total: people.filter(p => p.type === 'family').length,
+      count: people.filter(p => p.type === 'family' && p.role === 'parent').length / 2,
+      parents: people.filter(p => p.type === 'family' && p.role === 'parent').length,
+      children: {
+        total: people.filter(p => p.type === 'family' && p.role === 'child').length,
+        boys: people.filter(p => p.type === 'family' && p.role === 'child' && p.gender === 'M').length,
+        girls: people.filter(p => p.type === 'family' && p.role === 'child' && p.gender === 'F').length
+      }
+    }
+  };
+  
+  setDetailedStats(newDetailedStats);
+  setStats({
+    singles: newDetailedStats.singles.total,
+    couples: newDetailedStats.couples.count,
+    families: newDetailedStats.families.count
+  });
+}, [people]);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -213,13 +351,28 @@ const PeopleMovement = () => {
         </div>
         
         <div className="mb-4 grid grid-cols-3 gap-2">
-          {Object.entries(stats).map(([key, value]) => (
-            <div key={key} className="bg-gray-50 p-2 rounded text-center">
-              <div className="text-xs text-gray-600 capitalize">{key}</div>
-              <div className="text-sm font-bold">{value}</div>
-            </div>
-          ))}
-        </div>
+            <StatsPanel
+              label="singles"
+              value={stats.singles}
+              detailedStats={detailedStats.singles}
+              isOpen={openStatPanel === 'singles'}
+              onClick={() => setOpenStatPanel(openStatPanel === 'singles' ? null : 'singles')}
+            />
+            <StatsPanel
+              label="couples"
+              value={stats.couples}
+              detailedStats={detailedStats.couples}
+              isOpen={openStatPanel === 'couples'}
+              onClick={() => setOpenStatPanel(openStatPanel === 'couples' ? null : 'couples')}
+            />
+            <StatsPanel
+              label="families"
+              value={stats.families}
+              detailedStats={detailedStats.families}
+              isOpen={openStatPanel === 'families'}
+              onClick={() => setOpenStatPanel(openStatPanel === 'families' ? null : 'families')}
+            />
+          </div>
 
         <svg className="w-full h-96 bg-slate-50" viewBox="0 0 600 300">
           <rect x="50" y="80" width="500" height="20" fill="#666"/>
