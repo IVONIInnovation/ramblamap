@@ -204,9 +204,9 @@ const PeopleMovement = () => {
     <main className="flex min-h-screen flex-col items-center p-6">
       <Card className="p-6 w-full max-w-4xl">
         <div className="flex justify-between items-start mb-4">
-          <div className="font-sans text-xl font-bold">La Rambla People Movement</div>
+          <div className="font-sans text-xl font-bold">La Rambla: Movimiento de personas</div>
           <img 
-            src="/api/placeholder/120/40"
+            src="https://www.elisava.net/wp-content/themes/elisava/images/logo.svg"
             alt="Elisava Logo"
             className="h-10 object-contain"
           />
@@ -329,27 +329,27 @@ const PeopleMovement = () => {
           <div className="flex items-center gap-2">
             <div className="flex items-center">
               <div className="w-2 h-2 rounded-full bg-blue-600 mr-1"></div>
-              Single (M)
+              Soltero (H)
             </div>
             <div className="flex items-center">
               <div className="w-2 h-2 rounded-full bg-pink-400 mr-1"></div>
-              Single (F)
+              Soltera (M)
             </div>
             <div className="flex items-center">
               <div className="w-2 h-2 rounded-full bg-purple-600 mr-1"></div>
-              Couple
+              Pareja
             </div>
             <div className="flex items-center">
               <div className="w-2 h-2 rounded-full bg-indigo-500 mr-1"></div>
-              Parent
+              Padres
             </div>
             <div className="flex items-center">
               <div className="w-2 h-2 rounded-full bg-green-500 mr-1"></div>
-              Boy
+              Chico
             </div>
             <div className="flex items-center">
               <div className="w-2 h-2 rounded-full bg-yellow-500 mr-1"></div>
-              Girl
+              Niña
             </div>
           </div>
         </div>
